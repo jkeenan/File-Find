@@ -1,4 +1,4 @@
-package File::Find;
+package File::XFind;
 use 5.006;
 use strict;
 use warnings;
@@ -15,25 +15,25 @@ require Cwd;
 
 =head1 NAME
 
-File::Find - Traverse a directory tree.
+File::XFind - Traverse a directory tree.
 
 =head1 SYNOPSIS
 
-    use File::Find;
+    use File::XFind;
     find(\&wanted, @directories_to_search);
     sub wanted { ... }
 
-    use File::Find;
+    use File::XFind;
     finddepth(\&wanted, @directories_to_search);
     sub wanted { ... }
 
-    use File::Find;
+    use File::XFind;
     find({ wanted => \&process, follow => 1 }, '.');
 
 =head1 DESCRIPTION
 
 These are functions for searching through directory trees doing work
-on each file found similar to the Unix I<find> command.  File::Find
+on each file found similar to the Unix I<find> command.  File::XFind
 exports two functions, C<find> and C<finddepth>.  They work similarly
 but have subtle differences.
 
@@ -91,7 +91,7 @@ specifying C<< { bydepth => 1 } >> in the first argument of C<find()>.
 
 The value should be a code reference. This code reference is used to
 preprocess the current directory. The name of the currently processed
-directory is in C<$File::Find::dir>. Your preprocessing function is
+directory is in C<$File::XFind::dir>. Your preprocessing function is
 called after C<readdir()>, but before the loop that calls the C<wanted()>
 function. It is called with a list of strings (actually file/directory
 names) and is expected to return a list of strings. The code can be
@@ -103,7 +103,7 @@ I<follow> or I<follow_fast> are in effect, C<preprocess> is a no-op.
 
 The value should be a code reference. It is invoked just before leaving
 the currently processed directory. It is called in void context with no
-arguments. The name of the current directory is in C<$File::Find::dir>. This
+arguments. The name of the current directory is in C<$File::XFind::dir>. This
 hook is handy for summarizing a directory, such as calculating its disk
 usage. When I<follow> or I<follow_fast> are in effect, C<postprocess> is a
 no-op.
@@ -128,7 +128,7 @@ are not set.
 
 =item *
 
-There is a variable C<$File::Find::fullname> which holds the absolute
+There is a variable C<$File::XFind::fullname> which holds the absolute
 pathname of the file with all symbolic links resolved.  If the link is
 a dangling symbolic link, then fullname will be set to C<undef>.
 
@@ -151,12 +151,12 @@ This is also a no-op on Win32.
 C<follow_skip==1>, which is the default, causes all files which are
 neither directories nor symbolic links to be ignored if they are about
 to be processed a second time. If a directory or a symbolic link
-are about to be processed a second time, File::Find dies.
+are about to be processed a second time, File::XFind dies.
 
-C<follow_skip==0> causes File::Find to die if any file is about to be
+C<follow_skip==0> causes File::XFind to die if any file is about to be
 processed a second time.
 
-C<follow_skip==2> causes File::Find to ignore any duplicate files and
+C<follow_skip==2> causes File::XFind to ignore any duplicate files and
 directories but to proceed normally otherwise.
 
 =item C<dangling_symlinks>
@@ -171,7 +171,7 @@ will be silently ignored.
 
 Does not C<chdir()> to each directory as it recurses. The C<wanted()>
 function will need to be aware of this, of course. In this case,
-C<$_> will be the same as C<$File::Find::name>.
+C<$_> will be the same as C<$File::XFind::name>.
 
 =item C<untaint>
 
@@ -200,7 +200,7 @@ including all its sub-directories. The default is to 'die' in such a case.
 The C<wanted()> function does whatever verifications you want on
 each file and directory.  Note that despite its name, the C<wanted()>
 function is a generic callback function, and does B<not> tell
-File::Find if a file is "wanted" or not.  In fact, its return value
+File::XFind if a file is "wanted" or not.  In fact, its return value
 is ignored.
 
 The wanted function takes no arguments but rather does its work
@@ -208,11 +208,11 @@ through a collection of variables.
 
 =over 4
 
-=item C<$File::Find::dir> is the current directory name,
+=item C<$File::XFind::dir> is the current directory name,
 
 =item C<$_> is the current filename within that directory
 
-=item C<$File::Find::name> is the complete pathname to the file.
+=item C<$File::XFind::name> is the complete pathname to the file.
 
 =back
 
@@ -221,18 +221,18 @@ affecting data outside of the wanted function.
 
 For example, when examining the file F</some/path/foo.ext> you will have:
 
-    $File::Find::dir  = /some/path/
+    $File::XFind::dir  = /some/path/
     $_                = foo.ext
-    $File::Find::name = /some/path/foo.ext
+    $File::XFind::name = /some/path/foo.ext
 
-You are chdir()'d to C<$File::Find::dir> when the function is called,
+You are chdir()'d to C<$File::XFind::dir> when the function is called,
 unless C<no_chdir> was specified. Note that when changing to
 directories is in effect the root directory (F</>) is a somewhat
-special case inasmuch as the concatenation of C<$File::Find::dir>,
-C<'/'> and C<$_> is not literally equal to C<$File::Find::name>. The
+special case inasmuch as the concatenation of C<$File::XFind::dir>,
+C<'/'> and C<$_> is not literally equal to C<$File::XFind::name>. The
 table below summarizes all variants:
 
-              $File::Find::name  $File::Find::dir  $_
+              $File::XFind::name  $File::XFind::dir  $_
  default      /                  /                 .
  no_chdir=>0  /etc               /                 etc
               /etc/x             /etc              x
@@ -243,13 +243,13 @@ table below summarizes all variants:
 
 
 When C<follow> or C<follow_fast> are in effect, there is
-also a C<$File::Find::fullname>.  The function may set
-C<$File::Find::prune> to prune the tree unless C<bydepth> was
+also a C<$File::XFind::fullname>.  The function may set
+C<$File::XFind::prune> to prune the tree unless C<bydepth> was
 specified.  Unless C<follow> or C<follow_fast> is specified, for
 compatibility reasons (find.pl, find2perl) there are in addition the
-following globals available: C<$File::Find::topdir>,
-C<$File::Find::topdev>, C<$File::Find::topino>,
-C<$File::Find::topmode> and C<$File::Find::topnlink>.
+following globals available: C<$File::XFind::topdir>,
+C<$File::XFind::topdev>, C<$File::XFind::topino>,
+C<$File::XFind::topmode> and C<$File::XFind::topnlink>.
 
 This library is useful for the C<find2perl> tool, which when fed,
 
@@ -266,7 +266,7 @@ produces something like:
         ||
         ($nlink || (($dev, $ino, $mode, $nlink, $uid, $gid) = lstat($_))) &&
         $dev < 0 &&
-        ($File::Find::prune = 1);
+        ($File::XFind::prune = 1);
     }
 
 Notice the C<_> in the above C<int(-M _)>: the C<_> is a magical
@@ -277,7 +277,7 @@ Here's another interesting wanted function.  It will find all symbolic
 links that don't resolve:
 
     sub wanted {
-         -l && !-e && print "bogus link: $File::Find::name\n";
+         -l && !-e && print "bogus link: $File::XFind::name\n";
     }
 
 Note that you may mix directories and (non-directory) files in the list of 
@@ -294,10 +294,10 @@ module.
 =head1 WARNINGS
 
 If you run your program with the C<-w> switch, or if you use the
-C<warnings> pragma, File::Find will report warnings for several weird
+C<warnings> pragma, File::XFind will report warnings for several weird
 situations. You can disable these warnings by putting the statement
 
-    no warnings 'File::Find';
+    no warnings 'File::XFind';
 
 in the appropriate scope. See L<perllexwarn> for more info about lexical
 warnings.
@@ -308,17 +308,17 @@ warnings.
 
 =item $dont_use_nlink
 
-You can set the variable C<$File::Find::dont_use_nlink> to 1, if you want to
-force File::Find to always stat directories. This was used for file systems
+You can set the variable C<$File::XFind::dont_use_nlink> to 1, if you want to
+force File::XFind to always stat directories. This was used for file systems
 that do not have an C<nlink> count matching the number of sub-directories.
 Examples are ISO-9660 (CD-ROM), AFS, HPFS (OS/2 file system), FAT (DOS file
 system) and a couple of others.
 
-You shouldn't need to set this variable, since File::Find should now detect
+You shouldn't need to set this variable, since File::XFind should now detect
 such file systems on-the-fly and switch itself to using stat. This works even
 for parts of your file system, like a mounted CD-ROM.
 
-If you do set C<$File::Find::dont_use_nlink> to 1, you will notice slow-downs.
+If you do set C<$File::XFind::dont_use_nlink> to 1, you will notice slow-downs.
 
 =item symlinks
 
@@ -340,9 +340,9 @@ hierarchy.
 
 =head1 HISTORY
 
-File::Find used to produce incorrect results if called recursively.
+File::XFind used to produce incorrect results if called recursively.
 During the development of perl 5.8 this bug was fixed.
-The first fixed version of File::Find was 1.01.
+The first fixed version of File::XFind was 1.01.
 
 =head1 SEE ALSO
 
@@ -372,7 +372,7 @@ our ($wanted_callback, $avoid_nlink, $bydepth, $no_chdir, $follow,
 sub contract_name {
     my ($cdir,$fn) = @_;
 
-    return substr($cdir,0,rindex($cdir,'/')) if $fn eq $File::Find::current_dir;
+    return substr($cdir,0,rindex($cdir,'/')) if $fn eq $File::XFind::current_dir;
 
     $cdir = substr($cdir,0,rindex($cdir,'/')+1);
 
@@ -516,7 +516,7 @@ sub _find_opt {
     local our ($topdir, $topdev, $topino, $topmode, $topnlink);
 
     # a symbolic link to a directory doesn't increase the link count
-    $avoid_nlink      = $follow || $File::Find::dont_use_nlink;
+    $avoid_nlink      = $follow || $File::XFind::dont_use_nlink;
 
     my ($abs_dir, $Is_Dir);
 
@@ -542,7 +542,7 @@ sub _find_opt {
 	    if (substr($top_item,0,1) eq '/') {
 		$abs_dir = $top_item;
 	    }
-	    elsif ($top_item eq $File::Find::current_dir) {
+	    elsif ($top_item eq $File::XFind::current_dir) {
 		$abs_dir = $cwd;
 	    }
 	    else {  # care about any  ../
@@ -606,7 +606,7 @@ sub _find_opt {
 		next Proc_Top_Item;
 	    }
 
-	    $name = $abs_dir . $_; # $File::Find::name
+	    $name = $abs_dir . $_; # $File::XFind::name
 	    $_ = $name if $no_chdir;
 
 	    { $wanted_callback->() }; # protect against wild "next"
@@ -644,7 +644,7 @@ sub _find_dir($$$) {
     my $SE= [];
     my $dir_name= $p_dir;
     my $dir_pref;
-    my $dir_rel = $File::Find::current_dir;
+    my $dir_rel = $File::XFind::current_dir;
     my $tainted = 0;
     my $no_nlink;
 
@@ -668,7 +668,7 @@ sub _find_dir($$$) {
 
     local ($dir, $name, $prune, *DIR);
 
-    unless ( $no_chdir || ($p_dir eq $File::Find::current_dir)) {
+    unless ( $no_chdir || ($p_dir eq $File::XFind::current_dir)) {
 	my $udir = $p_dir;
 	if (( $untaint ) && (is_tainted($p_dir) )) {
 	    ( $udir ) = $p_dir =~ m|$untaint_pat|;
@@ -692,8 +692,8 @@ sub _find_dir($$$) {
 
     while (defined $SE) {
 	unless ($bydepth) {
-	    $dir= $p_dir; # $File::Find::dir
-	    $name= $dir_name; # $File::Find::name
+	    $dir= $p_dir; # $File::XFind::dir
+	    $name= $dir_name; # $File::XFind::name
 	    $_= ($no_chdir ? $dir_name : $dir_rel ); # $_
 	    # prune may happen here
 	    $prune= 0;
@@ -702,7 +702,7 @@ sub _find_dir($$$) {
 	}
 
 	# change to that directory
-	unless ($no_chdir || ($dir_rel eq $File::Find::current_dir)) {
+	unless ($no_chdir || ($dir_rel eq $File::XFind::current_dir)) {
 	    my $udir= $dir_rel;
 	    if ( ($untaint) && (($tainted) || ($tainted = is_tainted($dir_rel) )) ) {
 		( $udir ) = $dir_rel =~ m|$untaint_pat|;
@@ -722,10 +722,10 @@ sub _find_dir($$$) {
 	    $CdLvl++;
 	}
 
-	$dir= $dir_name; # $File::Find::dir
+	$dir= $dir_name; # $File::XFind::dir
 
 	# Get the list of files in the current directory.
-	unless (opendir DIR, ($no_chdir ? $dir_name : $File::Find::current_dir)) {
+	unless (opendir DIR, ($no_chdir ? $dir_name : $File::XFind::current_dir)) {
 	    warnings::warnif "Can't opendir($dir_name): $!\n";
 	    next;
 	}
@@ -751,9 +751,9 @@ sub _find_dir($$$) {
 		    $FN =~ s/\.dir\z//i;
 		    $FN =~ s#\.$## if ($FN ne '.');
 		}
-		next if $FN =~ $File::Find::skip_pattern;
+		next if $FN =~ $File::XFind::skip_pattern;
 		
-		$name = $dir_pref . $FN; # $File::Find::name
+		$name = $dir_pref . $FN; # $File::XFind::name
 		$_ = ($no_chdir ? $name : $FN); # $_
 		{ $wanted_callback->() }; # protect against wild "next"
 	    }
@@ -769,7 +769,7 @@ sub _find_dir($$$) {
             my $stack_top = @Stack;
 
 	    for my $FN (@filenames) {
-		next if $FN =~ $File::Find::skip_pattern;
+		next if $FN =~ $File::XFind::skip_pattern;
 		if ($subcount > 0 || $no_nlink) {
 		    # Seen all the subdirs?
 		    # check for directoriness.
@@ -785,13 +785,13 @@ sub _find_dir($$$) {
 			         [$CdLvl,$dir_name,$FN,$sub_nlink];
 		    }
 		    else {
-			$name = $dir_pref . $FN; # $File::Find::name
+			$name = $dir_pref . $FN; # $File::XFind::name
 			$_= ($no_chdir ? $name : $FN); # $_
 			{ $wanted_callback->() }; # protect against wild "next"
 		    }
 		}
 		else {
-		    $name = $dir_pref . $FN; # $File::Find::name
+		    $name = $dir_pref . $FN; # $File::XFind::name
 		    $_= ($no_chdir ? $name : $FN); # $_
 		    { $wanted_callback->() }; # protect against wild "next"
 		}
@@ -836,8 +836,8 @@ sub _find_dir($$$) {
 	    }
 
 	    if ( $nlink == -2 ) {
-		$name = $dir = $p_dir; # $File::Find::name / dir
-                $_ = $File::Find::current_dir;
+		$name = $dir = $p_dir; # $File::XFind::name / dir
+                $_ = $File::XFind::current_dir;
 		$post_process->();		# End-of-directory processing
 	    }
 	    elsif ( $nlink < 0 ) {  # must be finddepth, report dirname now
@@ -878,7 +878,7 @@ sub _find_dir_symlnk($$$) {
     my $dir_name = $p_dir;
     my $dir_pref;
     my $loc_pref;
-    my $dir_rel = $File::Find::current_dir;
+    my $dir_rel = $File::XFind::current_dir;
     my $byd_flag; # flag for pending stack entry if $bydepth
     my $tainted = 0;
     my $ok = 1;
@@ -904,7 +904,7 @@ sub _find_dir_symlnk($$$) {
 		}
 	    }
 	}
-	$ok = chdir($updir_loc) unless ($p_dir eq $File::Find::current_dir);
+	$ok = chdir($updir_loc) unless ($p_dir eq $File::XFind::current_dir);
 	unless ($ok) {
 	    warnings::warnif "Can't cd to $updir_loc: $!\n";
 	    return;
@@ -923,10 +923,10 @@ sub _find_dir_symlnk($$$) {
 		    next;
 		}
 	    }
-	    $dir= $p_dir; # $File::Find::dir
-	    $name= $dir_name; # $File::Find::name
+	    $dir= $p_dir; # $File::XFind::dir
+	    $name= $dir_name; # $File::XFind::name
 	    $_= ($no_chdir ? $dir_name : $dir_rel ); # $_
-	    $fullname= $dir_loc; # $File::Find::fullname
+	    $fullname= $dir_loc; # $File::XFind::fullname
 	    # prune may happen here
 	    $prune= 0;
 	    lstat($_); # make sure  file tests with '_' work
@@ -935,7 +935,7 @@ sub _find_dir_symlnk($$$) {
 	}
 
 	# change to that directory
-	unless ($no_chdir || ($dir_rel eq $File::Find::current_dir)) {
+	unless ($no_chdir || ($dir_rel eq $File::XFind::current_dir)) {
 	    $updir_loc = $dir_loc;
 	    if ( ($untaint) && (($tainted) || ($tainted = is_tainted($dir_loc) )) ) {
 		# untaint $dir_loc, what will be pushed on the stack as (untainted) parent dir
@@ -955,10 +955,10 @@ sub _find_dir_symlnk($$$) {
 	    }
 	}
 
-	$dir = $dir_name; # $File::Find::dir
+	$dir = $dir_name; # $File::XFind::dir
 
 	# Get the list of files in the current directory.
-	unless (opendir DIR, ($no_chdir ? $dir_loc : $File::Find::current_dir)) {
+	unless (opendir DIR, ($no_chdir ? $dir_loc : $File::XFind::current_dir)) {
 	    warnings::warnif "Can't opendir($dir_loc): $!\n";
 	    next;
 	}
@@ -974,7 +974,7 @@ sub _find_dir_symlnk($$$) {
 		$FN =~ s/\.dir\z//i;
 		$FN =~ s#\.$## if ($FN ne '.');
 	    }
-	    next if $FN =~ $File::Find::skip_pattern;
+	    next if $FN =~ $File::XFind::skip_pattern;
 
 	    # follow symbolic links / do an lstat
 	    $new_loc = Follow_SymLink($loc_pref.$FN);
@@ -1008,8 +1008,8 @@ sub _find_dir_symlnk($$$) {
 		push @Stack,[$new_loc,$updir_loc,$dir_name,$FN,1];
 	    }
 	    else {
-		$fullname = $new_loc; # $File::Find::fullname
-		$name = $dir_pref . $FN; # $File::Find::name
+		$fullname = $new_loc; # $File::XFind::fullname
+		$name = $dir_pref . $FN; # $File::XFind::name
 		$_ = ($no_chdir ? $name : $FN); # $_
 		{ $wanted_callback->() }; # protect against wild "next"
 	    }
@@ -1023,18 +1023,18 @@ sub _find_dir_symlnk($$$) {
 	    $dir_pref = "$dir_name/";
 	    $loc_pref = "$dir_loc/";
 	    if ( $byd_flag < 0 ) {  # must be finddepth, report dirname now
-		unless ($no_chdir || ($dir_rel eq $File::Find::current_dir)) {
+		unless ($no_chdir || ($dir_rel eq $File::XFind::current_dir)) {
 		    unless (chdir $updir_loc) { # $updir_loc (parent dir) is always untainted
 			warnings::warnif "Can't cd to $updir_loc: $!\n";
 			next;
 		    }
 		}
-		$fullname = $dir_loc; # $File::Find::fullname
-		$name = $dir_name; # $File::Find::name
+		$fullname = $dir_loc; # $File::XFind::fullname
+		$name = $dir_name; # $File::XFind::name
 		if ( substr($name,-2) eq '/.' ) {
-		    substr($name, length($name) == 2 ? -1 : -2) = ''; # $File::Find::name
+		    substr($name, length($name) == 2 ? -1 : -2) = ''; # $File::XFind::name
 		}
-		$dir = $p_dir; # $File::Find::dir
+		$dir = $p_dir; # $File::XFind::dir
 		$_ = ($no_chdir ? $dir_name : $dir_rel); # $_
 		if ( substr($_,-2) eq '/.' ) {
 		    substr($_, length($_) == 2 ? -1 : -2) = '';
@@ -1062,7 +1062,7 @@ sub wrap_wanted {
 	    $wanted->{follow_skip} = 1 unless defined $wanted->{follow_skip};
 	}
 	if ( $wanted->{untaint} ) {
-	    $wanted->{untaint_pattern} = $File::Find::untaint_pattern
+	    $wanted->{untaint_pattern} = $File::XFind::untaint_pattern
 		unless defined $wanted->{untaint_pattern};
 	    $wanted->{untaint_skip} = 0 unless defined $wanted->{untaint_skip};
 	}
@@ -1088,23 +1088,23 @@ sub finddepth {
 }
 
 # default
-$File::Find::skip_pattern    = qr/^\.{1,2}\z/;
-$File::Find::untaint_pattern = qr|^([-+@\w./]+)$|;
+$File::XFind::skip_pattern    = qr/^\.{1,2}\z/;
+$File::XFind::untaint_pattern = qr|^([-+@\w./]+)$|;
 
 # These are hard-coded for now, but may move to hint files.
 if ($^O eq 'VMS') {
     $Is_VMS = 1;
-    $File::Find::dont_use_nlink  = 1;
+    $File::XFind::dont_use_nlink  = 1;
 }
 elsif ($^O eq 'MSWin32') {
     $Is_Win32 = 1;
 }
 
 # this _should_ work properly on all platforms
-# where File::Find can be expected to work
-$File::Find::current_dir = File::Spec->curdir || '.';
+# where File::XFind can be expected to work
+$File::XFind::current_dir = File::Spec->curdir || '.';
 
-$File::Find::dont_use_nlink = 1
+$File::XFind::dont_use_nlink = 1
     if $^O eq 'os2' || $^O eq 'dos' || $^O eq 'amigaos' || $Is_Win32 ||
        $^O eq 'interix' || $^O eq 'cygwin' || $^O eq 'qnx' || $^O eq 'nto';
 
@@ -1112,9 +1112,9 @@ $File::Find::dont_use_nlink = 1
 # report the number of links in a directory as an indication
 # of the number of files.
 # See, e.g. hints/machten.sh for MachTen 2.2.
-unless ($File::Find::dont_use_nlink) {
+unless ($File::XFind::dont_use_nlink) {
     require Config;
-    $File::Find::dont_use_nlink = 1 if ($Config::Config{'dont_use_nlink'});
+    $File::XFind::dont_use_nlink = 1 if ($Config::Config{'dont_use_nlink'});
 }
 
 # We need a function that checks if a scalar is tainted. Either use the

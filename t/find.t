@@ -13,14 +13,14 @@ BEGIN {
     $SIG{'__WARN__'} = sub { $warn_msg = $_[0]; warn "# $_[0]"; };
 
     if ($^O eq 'MSWin32' || $^O eq 'cygwin' || $^O eq 'VMS') {
-        # This is a hack - at present File::Find does not produce native names
+        # This is a hack - at present File::XFind does not produce native names
         # on Win32 or VMS, so force File::Spec to use Unix names.
-        # must be set *before* importing File::Find
+        # must be set *before* importing File::XFind
         require File::Spec::Unix;
         @File::Spec::ISA = 'File::Spec::Unix';
     }
-    require File::Find;
-    import File::Find;
+    require File::XFind;
+    import File::XFind;
 }
 
 my $symlink_exists = eval { symlink("",""); 1 };
@@ -41,13 +41,13 @@ use Testing qw(
 );
 
 my %Expect_File = (); # what we expect for $_
-my %Expect_Name = (); # what we expect for $File::Find::name/fullname
-my %Expect_Dir  = (); # what we expect for $File::Find::dir
+my %Expect_Name = (); # what we expect for $File::XFind::name/fullname
+my %Expect_Dir  = (); # what we expect for $File::XFind::dir
 my (@files);
 
 my $orig_dir = cwd();
 
-# Uncomment this to see where File::Find is chdir-ing to.  Helpful for
+# Uncomment this to see where File::XFind is chdir-ing to.  Helpful for
 # debugging its little jaunts around the filesystem.
 # BEGIN {
 #     use Cwd;
@@ -139,7 +139,7 @@ END {
 }
 
 sub wanted_File_Dir {
-    print "# \$File::Find::dir => '$File::Find::dir'\t\$_ => '$_'\n";
+    print "# \$File::XFind::dir => '$File::XFind::dir'\t\$_ => '$_'\n";
     s#\.$## if ($^O eq 'VMS' && $_ ne '.'); #
     s/(.dir)?$//i if ($^O eq 'VMS' && -d _);
     ok( $Expect_File{$_}, "found $_ for \$_, as expected" );
@@ -155,19 +155,19 @@ sub wanted_File_Dir {
 
 sub wanted_File_Dir_prune {
     &wanted_File_Dir;
-    $File::Find::prune = 1 if  $_ eq 'faba';
+    $File::XFind::prune = 1 if  $_ eq 'faba';
 }
 
 sub wanted_Name {
-    my $n = $File::Find::name;
+    my $n = $File::XFind::name;
     $n =~ s#\.$## if ($^O eq 'VMS' && $n ne '.'); #
-    print "# \$File::Find::name => '$n'\n";
+    print "# \$File::XFind::name => '$n'\n";
     my $i = rindex($n,'/');
     my $OK = exists($Expect_Name{$n});
     if ( $OK ) {
         $OK= exists($Expect_Name{substr($n,0,$i)})  if $i >= 0;
     }
-    ok( $OK, "found $n for \$File::Find::name, as expected" );
+    ok( $OK, "found $n for \$File::XFind::name, as expected" );
     delete $Expect_Name{$n};
 }
 
@@ -184,7 +184,7 @@ sub wanted_File {
 }
 
 sub simple_wanted {
-    print "# \$File::Find::dir => '$File::Find::dir'\n";
+    print "# \$File::XFind::dir => '$File::XFind::dir'\n";
     print "# \$_ => '$_'\n";
 }
 
@@ -193,24 +193,24 @@ sub noop_wanted {}
 sub my_preprocess {
     @files = @_;
     print "# --preprocess--\n";
-    print "#   \$File::Find::dir => '$File::Find::dir' \n";
+    print "#   \$File::XFind::dir => '$File::XFind::dir' \n";
     foreach my $file (@files) {
         $file =~ s/\.(dir)?$//i if $^O eq 'VMS';
         print "#   $file \n";
-        delete $Expect_Dir{ $File::Find::dir }->{$file};
+        delete $Expect_Dir{ $File::XFind::dir }->{$file};
     }
     print "# --end preprocess--\n";
-    is(scalar(keys %{$Expect_Dir{ $File::Find::dir }}), 0,
+    is(scalar(keys %{$Expect_Dir{ $File::XFind::dir }}), 0,
         "my_preprocess: got 0, as expected");
-    if (scalar(keys %{$Expect_Dir{ $File::Find::dir }}) == 0) {
-        delete $Expect_Dir{ $File::Find::dir }
+    if (scalar(keys %{$Expect_Dir{ $File::XFind::dir }}) == 0) {
+        delete $Expect_Dir{ $File::XFind::dir }
     }
     return @files;
 }
 
 sub my_postprocess {
-    print "# postprocess: \$File::Find::dir => '$File::Find::dir' \n";
-    delete $Expect_Dir{ $File::Find::dir};
+    print "# postprocess: \$File::XFind::dir => '$File::XFind::dir' \n";
+    delete $Expect_Dir{ $File::XFind::dir};
 }
 
 # Use topdir() to specify a directory path that you want to pass to
@@ -219,8 +219,8 @@ sub my_postprocess {
 *topdir = \&dir_path;
 
 # Use file_path_name() to specify a file path that is expected for
-# $File::Find::Name (%Expect_Name). Note: When the no_chdir => 1
-# option is in effect, $_ is the same as $File::Find::Name. In that
+# $File::XFind::Name (%Expect_Name). Note: When the no_chdir => 1
+# option is in effect, $_ is the same as $File::XFind::Name. In that
 # case, also use this function to specify a file path that is expected
 # for $_.
 #
@@ -268,7 +268,7 @@ delete $Expect_File{ file_path('fsl') } unless $symlink_exists;
                 dir_path('fb') => 1, dir_path('fba') => 1);
 
 delete @Expect_Dir{ dir_path('fb'), dir_path('fba') } unless $symlink_exists;
-File::Find::find( {wanted => \&wanted_File_Dir_prune}, topdir('fa') );
+File::XFind::find( {wanted => \&wanted_File_Dir_prune}, topdir('fa') );
 is( scalar(keys %Expect_File), 0, "COMPLETE: Basic test of find()" );
 
 ##### Re-entrancy #####
@@ -289,8 +289,8 @@ delete $Expect_File{ file_path('fsl') } unless $symlink_exists;
 
 delete @Expect_Dir{ dir_path('fb'), dir_path('fba') } unless $symlink_exists;
 
-File::Find::find( {wanted => sub { wanted_File_Dir_prune();
-                                    File::Find::find( {wanted => sub
+File::XFind::find( {wanted => sub { wanted_File_Dir_prune();
+                                    File::XFind::find( {wanted => sub
                                     {} }, File::Spec->curdir ); } },
                                     topdir('fa') );
 
@@ -322,11 +322,11 @@ delete $Expect_File{ file_path_name('fa', 'fsl') } unless $symlink_exists;
 delete @Expect_Dir{ dir_path('fb'), dir_path('fb', 'fba') }
     unless $symlink_exists;
 
-File::Find::find( {wanted => \&wanted_File_Dir, no_chdir => 1},
+File::XFind::find( {wanted => \&wanted_File_Dir, no_chdir => 1},
           topdir('fa') );
 is( scalar(keys %Expect_File), 0, "COMPLETE: Test of 'no_chdir' option" );
 
-##### Test for $File::Find::name #####
+##### Test for $File::XFind::name #####
 
 %Expect_File = ();
 
@@ -347,8 +347,8 @@ is( scalar(keys %Expect_File), 0, "COMPLETE: Test of 'no_chdir' option" );
 
 delete $Expect_Name{ file_path('.', 'fa', 'fsl') } unless $symlink_exists;
 %Expect_Dir = ();
-File::Find::finddepth( {wanted => \&wanted_Name}, File::Spec->curdir );
-is( scalar(keys %Expect_Name), 0, "COMPLETE: Test for \$File::Find::name" );
+File::XFind::finddepth( {wanted => \&wanted_Name}, File::Spec->curdir );
+is( scalar(keys %Expect_Name), 0, "COMPLETE: Test for \$File::XFind::name" );
 
 
 ##### #####
@@ -374,11 +374,11 @@ delete $Expect_File{ file_path_name('.', 'fa', 'fsl') } unless $symlink_exists;
 %Expect_Name = ();
 %Expect_Dir = ();
 
-File::Find::finddepth( {wanted => \&wanted_File, no_chdir => 1},
+File::XFind::finddepth( {wanted => \&wanted_File, no_chdir => 1},
              File::Spec->curdir );
 
 is( scalar(keys %Expect_File), 0,
-    "COMPLETE: Equivalency of \$_ and \$File::Find::Name with 'no_chdir'" );
+    "COMPLETE: Equivalency of \$_ and \$File::XFind::Name with 'no_chdir'" );
 
 ##### #####
 
@@ -395,7 +395,7 @@ print "# check preprocess\n";
          dir_path('.', 'fb', 'fba')         => {fba_ord => 1}
          );
 
-File::Find::find( {wanted => \&noop_wanted,
+File::XFind::find( {wanted => \&noop_wanted,
          preprocess => \&my_preprocess}, File::Spec->curdir );
 
 is( scalar(keys %Expect_Dir), 0, "Got no files, as expected" );
@@ -415,7 +415,7 @@ print "# check postprocess\n";
          dir_path('.', 'fb', 'fba')         => 1
          );
 
-File::Find::find( {wanted => \&noop_wanted,
+File::XFind::find( {wanted => \&noop_wanted,
          postprocess => \&my_postprocess}, File::Spec->curdir );
 
 is( scalar(keys %Expect_Dir), 0, "Got no files, as expected" );
@@ -428,7 +428,7 @@ is( scalar(keys %Expect_Dir), 0, "Got no files, as expected" );
     my @foo = qw( a b c d e f );
     my %pre = map { $_ => } @foo;
 
-    File::Find::find( sub {  } , 'fa' ) for @foo;
+    File::XFind::find( sub {  } , 'fa' ) for @foo;
     delete $pre{$_} for @foo;
 
     is( scalar(keys %pre), 0, "Got no files, as expected" );
@@ -460,7 +460,7 @@ is( scalar(keys %Expect_Dir), 0, "Got no files, as expected" );
     my @foo = 'n';
     tie $foo[0], "Foo";
 
-    File::Find::find( sub { $true_count++; $_{$_}++; &_; } , 'fa' ) for @foo;
+    File::XFind::find( sub { $true_count++; $_{$_}++; &_; } , 'fa' ) for @foo;
     untie $_;
 
     is( $tie_called, 0, "Got no files tie_called, as expected" );
@@ -480,13 +480,13 @@ if ( $symlink_exists ) {
 
     ##### #####
 
-    # Verify that File::Find::find will call wanted even if the topdir
+    # Verify that File::XFind::find will call wanted even if the topdir
     # is a symlink to a directory, and it should not follow the link
     # unless follow is set, which it is not in this case
     %Expect_File = ( file_path('fsl') => 1 );
     %Expect_Name = ();
     %Expect_Dir = ();
-    File::Find::find( {wanted => \&wanted_File_Dir}, topdir('fa', 'fsl') );
+    File::XFind::find( {wanted => \&wanted_File_Dir}, topdir('fa', 'fsl') );
     is( scalar(keys %Expect_File), 0,
         "COMPLETE: top dir can be symlink to dir; link not followed without 'follow' option" );
 
@@ -506,7 +506,7 @@ if ( $symlink_exists ) {
                    dir_path('faba') => 1, dir_path('fb') => 1,
                    dir_path('fba') => 1);
 
-    File::Find::find( {wanted => \&wanted_File_Dir_prune,
+    File::XFind::find( {wanted => \&wanted_File_Dir_prune,
                follow_fast => 1}, topdir('fa') );
 
     is( scalar(keys %Expect_File), 0,
@@ -539,7 +539,7 @@ if ( $symlink_exists ) {
             dir_path('fb') => 1,
             dir_path('fb', 'fba') => 1);
 
-    File::Find::find( {wanted => \&wanted_File_Dir, follow_fast => 1,
+    File::XFind::find( {wanted => \&wanted_File_Dir, follow_fast => 1,
                no_chdir => 1}, topdir('fa') );
 
     is( scalar(keys %Expect_File), 0,
@@ -564,11 +564,11 @@ if ( $symlink_exists ) {
 
     %Expect_Dir = ();
 
-    File::Find::finddepth( {wanted => \&wanted_Name,
+    File::XFind::finddepth( {wanted => \&wanted_Name,
             follow_fast => 1}, topdir('fa') );
 
     is( scalar(keys %Expect_Name), 0,
-        "COMPLETE: test of 'follow_fast' option: \$File::Find::name case" );
+        "COMPLETE: test of 'follow_fast' option: \$File::XFind::name case" );
 
     ##### #####
 
@@ -591,11 +591,11 @@ if ( $symlink_exists ) {
     %Expect_Name = ();
     %Expect_Dir = ();
 
-    File::Find::finddepth( {wanted => \&wanted_File, follow_fast => 1,
+    File::XFind::finddepth( {wanted => \&wanted_File, follow_fast => 1,
             no_chdir => 1}, topdir('fa') );
 
     is( scalar(keys %Expect_File), 0,
-        "COMPLETE: Test of 'follow_fast' and 'no_chdir' options together: \$File::Find::name case" );
+        "COMPLETE: Test of 'follow_fast' and 'no_chdir' options together: \$File::XFind::name case" );
 
     ##### #####
 
@@ -631,7 +631,7 @@ if ( $symlink_exists ) {
         %Expect_Dir = ();
         undef $warn_msg;
 
-        File::Find::find( {wanted => \&wanted_File, follow => 1,
+        File::XFind::find( {wanted => \&wanted_File, follow => 1,
                dangling_symlinks =>
                    sub { $warn_msg = "$_[0] is a dangling symbolic link" }
                            },
@@ -651,7 +651,7 @@ if ( $symlink_exists ) {
     print "# check recursion\n";
     symlink_ok('../faa','fa/faa/faa_sl');
     undef $@;
-    eval {File::Find::find( {wanted => \&simple_wanted, follow => 1,
+    eval {File::XFind::find( {wanted => \&simple_wanted, follow => 1,
                              no_chdir => 1}, topdir('fa') ); };
     like(
         $@,
@@ -665,7 +665,7 @@ if ( $symlink_exists ) {
     symlink_ok('./fa_ord','fa/fa_ord_sl');
     undef $@;
 
-    eval {File::Find::finddepth( {wanted => \&simple_wanted,
+    eval {File::XFind::finddepth( {wanted => \&simple_wanted,
                                   follow => 1,
                                   follow_skip => 0, no_chdir => 1},
                                   topdir('fa') );};
@@ -705,7 +705,7 @@ if ( $symlink_exists ) {
             dir_path('fb') => 1,
             dir_path('fb','fba') => 1);
 
-    File::Find::finddepth( {wanted => \&wanted_File_Dir, follow => 1,
+    File::XFind::finddepth( {wanted => \&wanted_File_Dir, follow => 1,
                            follow_skip => 1, no_chdir => 1},
                            topdir('fa') );
     is( scalar(keys %Expect_File), 0,
@@ -717,7 +717,7 @@ if ( $symlink_exists ) {
     symlink_ok('./faa','fa/faa_sl');
     undef $@;
 
-    eval {File::Find::find( {wanted => \&simple_wanted, follow => 1,
+    eval {File::XFind::find( {wanted => \&simple_wanted, follow => 1,
                             follow_skip => 0, no_chdir => 1},
                             topdir('fa') );};
 
@@ -730,7 +730,7 @@ if ( $symlink_exists ) {
 
     undef $@;
 
-    eval {File::Find::find( {wanted => \&simple_wanted, follow => 1,
+    eval {File::XFind::find( {wanted => \&simple_wanted, follow => 1,
                             follow_skip => 1, no_chdir => 1},
                             topdir('fa') );};
 
@@ -770,7 +770,7 @@ if ( $symlink_exists ) {
             dir_path('fb') => 1,
             dir_path('fb', 'fba') => 1);
 
-    File::Find::find( {wanted => \&wanted_File_Dir, follow => 1,
+    File::XFind::find( {wanted => \&wanted_File_Dir, follow => 1,
                follow_skip => 2, no_chdir => 1}, topdir('fa') );
 
     ##### #####
@@ -821,7 +821,7 @@ if ($^O eq 'MSWin32') {
                    dir_path('fb') => 1,
                    dir_path('fba') => 1);
 
-    File::Find::find( {wanted => \&wanted_File_Dir}, topdir('fa'));
+    File::XFind::find( {wanted => \&wanted_File_Dir}, topdir('fa'));
     is( scalar(keys %Expect_File), 0, "Got no files, as expected" );
 
     ##### #####
@@ -846,7 +846,7 @@ if ($^O eq 'MSWin32') {
                    $volume . dir_path('fa', 'fab') => 1,
                    $volume . dir_path('fa', 'fab', 'faba') => 1);
 
-    File::Find::find( {wanted => \&wanted_File_Dir, no_chdir => 1}, $volume . topdir('fa'));
+    File::XFind::find( {wanted => \&wanted_File_Dir, no_chdir => 1}, $volume . topdir('fa'));
     is( scalar(keys %Expect_File), 0, "Got no files, as expected" );
 }
 
@@ -868,7 +868,7 @@ if ($symlink_exists) {
         $dangling_symlink ++ if "@_" =~ /dangling symbolic link/;
     };
 
-    File::Find::find (
+    File::XFind::find (
         {
             wanted            => sub {1;},
             follow            => 1,
@@ -887,14 +887,14 @@ if ($symlink_exists) {  # perl #120388
     create_file_ok(file_path ('fa', 'fax', 'faz'));
     symlink_ok( file_path ('..', 'fa', 'fax', 'faz'), file_path ('fa', 'fay') );
     my @seen;
-    File::Find::find( {wanted => sub {
+    File::XFind::find( {wanted => sub {
         if (/^fa[yz]$/) {
             push @seen, $_;
-            ok(-e $File::Find::fullname,
+            ok(-e $File::XFind::fullname,
                 "file identified by 'fullname' exists");
             my $subdir = file_path qw/for_find fa fax faz/;
             like(
-                $File::Find::fullname,
+                $File::XFind::fullname,
                 qr/\Q$subdir\E$/,
                 "fullname matches expected path"
             );
@@ -923,7 +923,7 @@ create_file_ok( file_path('fc', 'fcc', 'eta') );
 
 my @files_from_mixed = ();
 sub wantmatch {
-    if ( $File::Find::name =~ m/match/ ) {
+    if ( $File::XFind::name =~ m/match/ ) {
         push @files_from_mixed, $_;
         print "# \$_ => '$_'\n";
     }
@@ -968,7 +968,7 @@ if ($^O eq 'MSWin32') {
     closedir $ROOT_DIR;
     my $created_file;
     unless (defined $expected_first_file) {
-        $expected_first_file = '__perl_File_Find_test.tmp';
+        $expected_first_file = '__perl_File_XFind_test.tmp';
         open(F, ">", "/$expected_first_file") && close(F)
             or die "cannot create file in root directory: $!\n";
         $created_file = 1;
@@ -981,12 +981,12 @@ if ($^O eq 'MSWin32') {
     foreach my $no_chdir (0, 1) {
         foreach my $root_dir ("/", "\\", "$drive/", "$drive\\") {
             eval {
-                File::Find::find({
+                File::XFind::find({
                     'no_chdir' => $no_chdir,
                     'preprocess' => sub { return sort @_ },
                     'wanted' => sub {
                         -f or return; # the first call is for $root_dir itself.
-                        my $got = $File::Find::name;
+                        my $got = $File::XFind::name;
                         my $exp = "$root_dir$expected_first_file";
                         print "# no_chdir=$no_chdir $root_dir '$got'\n";
                         is($got, $exp,

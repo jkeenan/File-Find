@@ -18,8 +18,8 @@ use Testing qw(
 );
 
 my %Expect_File = (); # what we expect for $_
-my %Expect_Name = (); # what we expect for $File::Find::name/fullname
-my %Expect_Dir  = (); # what we expect for $File::Find::dir
+my %Expect_Name = (); # what we expect for $File::XFind::name/fullname
+my %Expect_Dir  = (); # what we expect for $File::XFind::dir
 my ($cwd, $cwd_untainted);
 
 BEGIN {
@@ -58,7 +58,7 @@ BEGIN {
 
 my $symlink_exists = eval { symlink("",""); 1 };
 
-use File::Find;
+use File::XFind;
 use File::Spec;
 use Cwd;
 
@@ -117,7 +117,7 @@ END {
 }
 
 sub wanted_File_Dir {
-    print "# \$File::Find::dir => '$File::Find::dir'\t\$_ => '$_'\n";
+    print "# \$File::XFind::dir => '$File::XFind::dir'\t\$_ => '$_'\n";
     s#\.$## if ($^O eq 'VMS' && $_ ne '.'); #
     s/(.dir)?$//i if ($^O eq 'VMS' && -d _);
     ok( $Expect_File{$_}, "found $_ for \$_, as expected" );
@@ -133,11 +133,11 @@ sub wanted_File_Dir {
 
 sub wanted_File_Dir_prune {
     &wanted_File_Dir;
-    $File::Find::prune=1 if  $_ eq 'faba';
+    $File::XFind::prune=1 if  $_ eq 'faba';
 }
 
 sub simple_wanted {
-    print "# \$File::Find::dir => '$File::Find::dir'\n";
+    print "# \$File::XFind::dir => '$File::XFind::dir'\n";
     print "# \$_ => '$_'\n";
 }
 
@@ -147,8 +147,8 @@ sub simple_wanted {
 *topdir = \&dir_path;
 
 # Use file_path_name() to specify a file path that's expected for
-# $File::Find::Name (%Expect_Name). Note: When the no_chdir => 1
-# option is in effect, $_ is the same as $File::Find::Name. In that
+# $File::XFind::Name (%Expect_Name). Note: When the no_chdir => 1
+# option is in effect, $_ is the same as $File::XFind::Name. In that
 # case, also use this function to specify a file path that's expected
 # for $_.
 #
@@ -198,7 +198,7 @@ delete $Expect_File{ file_path('fsl') } unless $symlink_exists;
 
 delete @Expect_Dir{ dir_path('fb'), dir_path('fba') } unless $symlink_exists;
 
-File::Find::find( {wanted => \&wanted_File_Dir_prune, untaint => 1,
+File::XFind::find( {wanted => \&wanted_File_Dir_prune, untaint => 1,
 		   untaint_pattern => qr|^(.+)$|}, topdir('fa') );
 
 is(scalar keys %Expect_File, 0, 'Found all expected files');
@@ -216,8 +216,8 @@ is(scalar keys %Expect_File, 0, 'Found all expected files');
                     dir_path('fb') => 1, dir_path('fba') => 1);
 
     delete @Expect_Dir{ dir_path('fb'), dir_path('fba') } unless $symlink_exists;
-    local $File::Find::untaint_pattern = qr|^([@\w./\-+]+)$|;
-    File::Find::find(
+    local $File::XFind::untaint_pattern = qr|^([@\w./\-+]+)$|;
+    File::XFind::find(
         {
             wanted => \&wanted_File_Dir_prune,
             untaint => 1,
@@ -225,7 +225,7 @@ is(scalar keys %Expect_File, 0, 'Found all expected files');
         topdir('fa')
     );
     is(scalar keys %Expect_File, 0,
-        'Explicitly defined $File::Find::untaint_pattern: Found all expected files');
+        'Explicitly defined $File::XFind::untaint_pattern: Found all expected files');
 }
 
 # don't untaint at all, should die
@@ -233,7 +233,7 @@ is(scalar keys %Expect_File, 0, 'Found all expected files');
 %Expect_Name = ();
 %Expect_Dir  = ();
 undef $@;
-eval {File::Find::find( {wanted => \&simple_wanted}, topdir('fa') );};
+eval {File::XFind::find( {wanted => \&simple_wanted}, topdir('fa') );};
 like( $@, qr|Insecure dependency|, 'Tainted directory causes death (good)' );
 chdir($cwd_untainted);
 
@@ -241,7 +241,7 @@ chdir($cwd_untainted);
 # untaint pattern doesn't match, should die
 undef $@;
 
-eval {File::Find::find( {wanted => \&simple_wanted, untaint => 1,
+eval {File::XFind::find( {wanted => \&simple_wanted, untaint => 1,
                          untaint_pattern => qr|^(NO_MATCH)$|},
                          topdir('fa') );};
 
@@ -253,7 +253,7 @@ chdir($cwd_untainted);
 print "# check untaint_skip (No follow)\n";
 undef $@;
 
-eval {File::Find::find( {wanted => \&simple_wanted, untaint => 1,
+eval {File::XFind::find( {wanted => \&simple_wanted, untaint => 1,
                          untaint_skip => 1, untaint_pattern =>
                          qr|^(NO_MATCH)$|}, topdir('fa') );};
 
@@ -296,7 +296,7 @@ SKIP: {
 		   dir_path('fb') => 1,
 		   dir_path('fb', 'fba') => 1);
 
-    File::Find::find( {wanted => \&wanted_File_Dir, follow_fast => 1,
+    File::XFind::find( {wanted => \&wanted_File_Dir, follow_fast => 1,
                        no_chdir => 1, untaint => 1, untaint_pattern =>
                        qr|^(.+)$| }, topdir('fa') );
 
@@ -306,7 +306,7 @@ SKIP: {
     # don't untaint at all, should die
     undef $@;
 
-    eval {File::Find::find( {wanted => \&simple_wanted, follow => 1},
+    eval {File::XFind::find( {wanted => \&simple_wanted, follow => 1},
 			    topdir('fa') );};
 
     like( $@, qr|Insecure dependency|, 'Not untainting causes death (good)' );
@@ -315,7 +315,7 @@ SKIP: {
     # untaint pattern doesn't match, should die
     undef $@;
 
-    eval {File::Find::find( {wanted => \&simple_wanted, follow => 1,
+    eval {File::XFind::find( {wanted => \&simple_wanted, follow => 1,
                              untaint => 1, untaint_pattern =>
                              qr|^(NO_MATCH)$|}, topdir('fa') );};
 
@@ -326,7 +326,7 @@ SKIP: {
     print "# check untaint_skip (Follow)\n";
     undef $@;
 
-    eval {File::Find::find( {wanted => \&simple_wanted, untaint => 1,
+    eval {File::XFind::find( {wanted => \&simple_wanted, untaint => 1,
                              untaint_skip => 1, untaint_pattern =>
                              qr|^(NO_MATCH)$|}, topdir('fa') );};
     like( $@, qr|insecure cwd|, 'Cwd not untainted with bad pattern (good)' );
